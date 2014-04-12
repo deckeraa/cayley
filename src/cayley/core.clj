@@ -24,10 +24,15 @@
 (defprotocol group
   "Protocol for defining elements and how the elements operate in a group"
   (elems [this] "Returns a set of the elements of the group")
-  (operate [this elem1 elem2] "Operates elem1 with elem2"))
+  (operate [this elem1 elem2] "Operates elem1 with elem2")
+  (inverse [this elem] "Returns the inverse of elem")
+  (ident [this] "Returns the identity element"))
 
 (defn operate-via-cayley-table [table elem1 elem2]
   (get (get table elem1) elem2))
+
+(defn invert-via-cayley-table [table elem]
+  (:iota (clojure.set/map-invert (get table elem))))
 
 (def star
   (fn this
@@ -53,10 +58,16 @@
 (defrecord d4 []
   group
   (elems [this] #{:iota :phi :psi :theta :sigma :tau :lambda :mu})
-  (operate [this elem1 elem2] (operate-via-cayley-table d4-cayley elem1 elem2)))
+  (operate [this elem1 elem2] (operate-via-cayley-table d4-cayley elem1 elem2))
+  (inverse [this elem] (invert-via-cayley-table d4-cayley elem))
+  (ident [this] :iota))
 
 (deftest test-d4-elem (is (= (elems (d4.)) #{:iota :phi :psi :theta :sigma :tau :lambda :mu})))
 (deftest test-d4-1 (is (= (operate (d4.) :sigma :tau) :iota)))
+(deftest test-d4-group
+  (testing "d4 -- symmetries of a square"
+    (testing "identity"
+      (is (= (ident (d4.)) :iota)))))
 
 ;; integer groups -- addition modulo n
 (defrecord int-group [n]
@@ -64,8 +75,9 @@
   (elems [this]
     (set (range 0 n)))
   (operate [this elem1 elem2]
-    (mod (+ elem1 elem2) n)))
-
+    (mod (+ elem1 elem2) n))
+  (inverse [this elem] (- n elem))
+  (ident [this] 0))
 
 (deftest test-int-group
   (testing "int-group -- addition modulo n"
@@ -74,13 +86,14 @@
       (is (= (elems (int-group. 1)) #{0})))
     (testing "operate"
       (is (= (operate (int-group. 4) 3 2)  1))
-      (is (= (operate (int-group. 5) 3 2)  0)))))
+      (is (= (operate (int-group. 5) 3 2)  0)))
+    (testing "inverse"
+      (is (= (inverse (int-group. 4) 3) 1))
+      (is (= (inverse (int-group. 2349532) 0) 0)))
+    (testing "identity"
+      (is (= (ident (int-group. 168)) 0)))))
 
-;; Operate elements together. First argument is the Cayley table as above.
 
-
-(defn inverse [table elem]
-  (:iota (clojure.set/map-invert (get table elem))))
 
 (defn conjugate "Conjugate elem1 with elem2: elem2*elem1*elem2^{-1}" [table elem1 elem2]
   (star table elem2 elem1 (inverse table elem2)))
@@ -100,6 +113,7 @@
     (if (empty? counterexamples)
       true
       counterexamples)))
+
 
 ;; (defn cycle-to-set "Returns the cycle constructed by the element over the operation given by table" [table element]
 ;;   (set (cons :iota
