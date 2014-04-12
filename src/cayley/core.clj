@@ -29,6 +29,15 @@
 (defn operate-via-cayley-table [table elem1 elem2]
   (get (get table elem1) elem2))
 
+(def star
+  (fn this
+    ([table elem1 elem2]
+       (get (get table elem1) elem2))
+    ([table elem1 elem2 & more-elems]
+       (apply this table (this table elem1 elem2) more-elems))))
+
+;; (deftest star1 (is (= (star d4-cayley :psi :lambda) :tau)))
+
 ;; d4 -- symmetries of a square, using my abstract algebra professor's custom notation
 (def d4-elems #{:iota :phi :psi :theta :sigma :tau :lambda :mu} )
 (def d4-cayley
@@ -47,23 +56,28 @@
   (operate [this elem1 elem2] (operate-via-cayley-table d4-cayley elem1 elem2)))
 
 (deftest test-d4-elem (is (= (elems (d4.)) #{:iota :phi :psi :theta :sigma :tau :lambda :mu})))
-(deftest test-d4-1(is (= (operate (d4.) :sigma :tau) :iota)))
+(deftest test-d4-1 (is (= (operate (d4.) :sigma :tau) :iota)))
 
 ;; integer groups -- addition modulo n
-;; (defrecord int-group [n]
-;;   "Integer group modulo n"
-;;   group
-;;   (elems [this] ))
+(defrecord int-group [n]
+  group
+  (elems [this]
+    (set (range 0 n)))
+  (operate [this elem1 elem2]
+    (mod (+ elem1 elem2) n)))
+
+
+(deftest test-int-group
+  (testing "int-group -- addition modulo n"
+    (testing "elems"
+      (is (= (elems (int-group. 3)) #{0 1 2}))
+      (is (= (elems (int-group. 1)) #{0})))
+    (testing "operate"
+      (is (= (operate (int-group. 4) 3 2)  1))
+      (is (= (operate (int-group. 5) 3 2)  0)))))
 
 ;; Operate elements together. First argument is the Cayley table as above.
-(def star
-  (fn this
-    ([table elem1 elem2]
-       (get (get table elem1) elem2))
-    ([table elem1 elem2 & more-elems]
-       (apply this table (this table elem1 elem2) more-elems))))
 
-(deftest star1 (is (= (star d4-cayley :psi :lambda) :tau)))
 
 (defn inverse [table elem]
   (:iota (clojure.set/map-invert (get table elem))))
