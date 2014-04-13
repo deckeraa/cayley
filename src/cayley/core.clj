@@ -17,7 +17,7 @@
   (:iota (clojure.set/map-invert (get table elem))))
 
 
-;; This is a workaround to define a multi-variadic operate function
+;; This is a workaround to define a variadic operate function
 ;; for all groups. It's pretty clean for a work-around since, when
 ;; called, it looks just like it could belong to the group protocol.
 (def operate
@@ -93,27 +93,40 @@
     (is (= (conjugate (int-group. 4) 2 3) 2)
         (= (conjugate (int-group. 4) 1 1) 3))))
 
-(defn- gen-single-conjugation-map [table n G]
-  (map #(list (str n " conj " %1) (conjugate table n %1)) G))
+(defn- gen-single-conjugation-map [group n G]
+  (map #(list (str n " conj " %1) (conjugate group n %1)) G))
 
 (defn- gen-conjugation-maps
-  "Creates a "
-  [table N G]
-  (mapcat #(gen-single-conjugation-map table %1 G) N))
+  [group N G]
+  (mapcat #(gen-single-conjugation-map group %1 G) N))
 
 (defn normal? "Returns true if set N is normal in set G, returns a list of counterexamples otherwise. N and G must be sets."
-  [table N G]
-  (let [counterexamples (filter #(not (contains? N (second %1)))
-                                (gen-conjugation-maps table N G))]
-    (if (empty? counterexamples)
-      true
-      counterexamples)))
+  ([N group]
+     (normal? group N (elems group)))
+  ([group N G]
+      (let [counterexamples (filter #(not (contains? N (second %1)))
+                                    (gen-conjugation-maps group N G))]
+        (if (empty? counterexamples)
+          true
+          counterexamples)))
+  )
 
-
-;; (defn cycle-to-set "Returns the cycle constructed by the element over the operation given by table" [table element]
-;;   (set (cons :iota
-;;              (take-while #(not= :iota %1)
-;;                          (rest (iterate #(star table %1 element) :iota))))))
+;; Since normal? returns counterexamples if it the group is not normal,
+;; I am testing the non-normal groups to see if they do not return true,
+;; since I haven't defined which counterexamples should be returned.
+(deftest test-normal?
+  (testing "normality on d4"
+    (is (= (normal? (cycle-to-set (d4.) #{:iota}) (d4.)) true))
+    (is (not (= (normal? (cycle-to-set d4-cayley #{:theta}) (d4.)) true)))
+    (is (not (= (normal? (cycle-to-set d4-cayley #{:psi}) (d4.)) false)))
+    (is (= (normal? (cycle-to-set d4-cayley #{:phi}) (d4.)) true))
+    (is (not (= (normal? (cycle-to-set d4-cayley #{:lambda}) (d4.)) true)))
+    (is (not (= (normal? (cycle-to-set d4-cayley #{:mu}) (d4.)) true)))
+    (is (= (normal? (cycle-to-set d4-cayley #{:theta :psi}) (d4.)) true))
+    (is (= (normal? (cycle-to-set d4-cayley #{:tau}) (d4.)) true))
+    (is (= (normal? (cycle-to-set d4-cayley #{:lambda :mu}) (d4.)) true))
+    (is (= (normal? (cycle-to-set d4-cayley d4-elems) (d4.)) true))
+    ))
 
 (defn- operate-many [table elements]
   (set (for [x elements y elements]
