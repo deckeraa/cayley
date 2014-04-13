@@ -1,47 +1,31 @@
 (ns cayley.core
   (:use [clojure.test :as test]))
 
-;; (defprotocol P
-;;   (foo [x])
-;;   (bar-me [x] [x y]))
-
-;; (bar-me
-;;  (let [x 42]
-;;    (reify P
-;;      (foo [this] 17)
-;;      (bar-me [this] x)
-;;      (bar-me [this meow] (+ x meow)))) -42)
-
-;; (defrecord test-P [offset]
-;;   P
-;;   (foo [this] offset)
-;;   (bar-me [this] offset)
-;;   (bar-me [this woof] (+ woof offset)))
-
-;; (bar-me (test-P. 23) 17)
-;; (test-P.foo 4)
-
+;; The protocol for defining a group
 (defprotocol group
   "Protocol for defining elements and how the elements operate in a group"
   (elems [this] "Returns a set of the elements of the group")
-  (operate [this elem1 elem2] "Operates elem1 with elem2")
+  (operate-internal [this elem1 elem2] "Operates elem1 with elem2")
   (inverse [this elem] "Returns the inverse of elem")
   (ident [this] "Returns the identity element"))
 
-(defn operate-via-cayley-table [table elem1 elem2]
+;; Internal functions for use with Cayley tables
+(defn- operate-via-cayley-table [table elem1 elem2]
   (get (get table elem1) elem2))
 
-(defn invert-via-cayley-table [table elem]
+(defn- invert-via-cayley-table [table elem]
   (:iota (clojure.set/map-invert (get table elem))))
 
-(def star
-  (fn this
-    ([table elem1 elem2]
-       (get (get table elem1) elem2))
-    ([table elem1 elem2 & more-elems]
-       (apply this table (this table elem1 elem2) more-elems))))
 
-;; (deftest star1 (is (= (star d4-cayley :psi :lambda) :tau)))
+;; This is a workaround to define a multi-variadic operate function
+;; for all groups. It's pretty clean for a work-around since, when
+;; called, it looks just like it could belong to the group protocol.
+(def operate
+  (fn this
+    ([group elem1 elem2]
+       (operate-internal group elem1 elem2))
+    ([group elem1 elem2 & more-elems]
+       (apply this group (this group elem1 elem2) more-elems))))
 
 ;; d4 -- symmetries of a square, using my abstract algebra professor's custom notation
 (def d4-elems #{:iota :phi :psi :theta :sigma :tau :lambda :mu} )
@@ -58,7 +42,7 @@
 (defrecord d4 []
   group
   (elems [this] #{:iota :phi :psi :theta :sigma :tau :lambda :mu})
-  (operate [this elem1 elem2] (operate-via-cayley-table d4-cayley elem1 elem2))
+  (operate-internal [this elem1 elem2] (operate-via-cayley-table d4-cayley elem1 elem2))
   (inverse [this elem] (invert-via-cayley-table d4-cayley elem))
   (ident [this] :iota))
 
@@ -74,9 +58,12 @@
   group
   (elems [this]
     (set (range 0 n)))
-  (operate [this elem1 elem2]
+  (operate-internal [this elem1 elem2]
     (mod (+ elem1 elem2) n))
-  (inverse [this elem] (- n elem))
+  (inverse [this elem]
+    (if (= 0 elem)
+      0
+      (- n elem)))
   (ident [this] 0))
 
 (deftest test-int-group
@@ -94,9 +81,17 @@
       (is (= (ident (int-group. 168)) 0)))))
 
 
+(defn conjugate "Conjugate elem1 with elem2: elem2*elem1*elem2^{-1}" [group elem1 elem2]
+  (operate group elem2 elem1 (inverse group elem2))
+  )
 
-(defn conjugate "Conjugate elem1 with elem2: elem2*elem1*elem2^{-1}" [table elem1 elem2]
-  (star table elem2 elem1 (inverse table elem2)))
+(deftest test-conjugate
+  (testing "conjugation on d4"
+    (is (= (conjugate (d4.) :sigma :theta) :tau))
+    (is (= (conjugate (d4.) :psi :mu) :theta)))
+  (testing "conjugation on Z_4"
+    (is (= (conjugate (int-group. 4) 2 3) 2)
+        (= (conjugate (int-group. 4) 1 1) 3))))
 
 (defn- gen-single-conjugation-map [table n G]
   (map #(list (str n " conj " %1) (conjugate table n %1)) G))
