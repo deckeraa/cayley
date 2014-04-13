@@ -117,65 +117,38 @@
 (deftest test-normal?
   (testing "normality on d4"
     (is (= (normal? (cycle-to-set (d4.) #{:iota}) (d4.)) true))
-    (is (not (= (normal? (cycle-to-set d4-cayley #{:theta}) (d4.)) true)))
-    (is (not (= (normal? (cycle-to-set d4-cayley #{:psi}) (d4.)) false)))
-    (is (= (normal? (cycle-to-set d4-cayley #{:phi}) (d4.)) true))
-    (is (not (= (normal? (cycle-to-set d4-cayley #{:lambda}) (d4.)) true)))
-    (is (not (= (normal? (cycle-to-set d4-cayley #{:mu}) (d4.)) true)))
-    (is (= (normal? (cycle-to-set d4-cayley #{:theta :psi}) (d4.)) true))
-    (is (= (normal? (cycle-to-set d4-cayley #{:tau}) (d4.)) true))
-    (is (= (normal? (cycle-to-set d4-cayley #{:lambda :mu}) (d4.)) true))
-    (is (= (normal? (cycle-to-set d4-cayley d4-elems) (d4.)) true))
+    (is (not (= (normal? (cycle-to-set (d4.) #{:theta}) (d4.)) true)))
+    (is (not (= (normal? (cycle-to-set (d4.) #{:psi}) (d4.)) false)))
+    (is (= (normal? (cycle-to-set (d4.) #{:phi}) (d4.)) true))
+    (is (not (= (normal? (cycle-to-set (d4.) #{:lambda}) (d4.)) true)))
+    (is (not (= (normal? (cycle-to-set (d4.) #{:mu}) (d4.)) true)))
+    (is (= (normal? (cycle-to-set (d4.) #{:theta :psi}) (d4.)) true))
+    (is (= (normal? (cycle-to-set (d4.) #{:tau}) (d4.)) true))
+    (is (= (normal? (cycle-to-set (d4.) #{:lambda :mu}) (d4.)) true))
+    (is (= (normal? (cycle-to-set (d4.) d4-elems) (d4.)) true))
     ))
 
-(defn- operate-many [table elements]
+(defn- operate-many
+  "Operates all n elements in the group together, to yield n^2 elements"
+  [group elements]
   (set (for [x elements y elements]
-         (star table x y))))
+         (operate group x y))))
 
-(defn cycle-to-set [table elements]
+;; Operates all elements together repeatedly until no new elements are
+;; found, at which point it is known that the elements are closed over
+;; the operation. Basically finds the fixed-point of operation over a set.
+(defn cycle-to-set [group elements]
   (let [newly-found (clojure.set/union
                      elements
-                     (operate-many table elements))]
+                     (operate-many group elements))]
     (if (= elements newly-found)
       elements
-      (cycle-to-set table newly-found))))
+      (cycle-to-set group newly-found))))
 
-;; Evaluate these for 21.22
-;; (normal? d4-cayley (cycle-to-set d4-cayley #{:iota}) d4-elems)
-;; (normal? d4-cayley (cycle-to-set d4-cayley #{:theta}) d4-elems)
-;; (normal? d4-cayley (cycle-to-set d4-cayley #{:psi}) d4-elems)
-;; (normal? d4-cayley (cycle-to-set d4-cayley #{:phi}) d4-elems)
-;; (normal? d4-cayley (cycle-to-set d4-cayley #{:lambda}) d4-elems)
-;; (normal? d4-cayley (cycle-to-set d4-cayley #{:mu}) d4-elems)
-;; (normal? d4-cayley (cycle-to-set d4-cayley #{:theta :psi}) d4-elems)
-;; (normal? d4-cayley (cycle-to-set d4-cayley #{:tau}) d4-elems)
-;; (normal? d4-cayley (cycle-to-set d4-cayley #{:lambda :mu}) d4-elems)
-;; (normal? d4-cayley (cycle-to-set d4-cayley d4-elems) d4-elems)
-
-;; playground -- these should really get turned into unit tests somehow
-;; (map #(list (str :theta " conj " %1) (conjugate d4-cayley :theta %1)) d4-elems)
-;; (gen-single-conjugation-map d4-cayley :theta d4-elems)
-;; (gen-conjugation-maps d4-cayley #{:theta :psi} d4-elems)
-;; (normal? d4-cayley #{:theta} d4-elems)
-;; (normal? d4-cayley (cycle-to-set d4-cayley :theta) d4-elems)
-;; (conjugate d4-cayley :psi :lambda)
-;; (contains? #{:theta} :theta)
-
-;; (star d4-cayley :lambda :tau)
-;; (star d4-cayley :sigma :theta :tau)
-;; (star d4-cayley :lambda :psi :lambda)
-;; (conjugate d4-cayley :theta :tau)
-;; (star d4-cayley :tau :theta :sigma)
-;; ((partial star d4-cayley) :tau :lambda)
-
-;; (inverse d4-cayley :tau)
-
-;; (take-while #(not= :iota %1) (rest (iterate #(star d4-cayley %1 :theta) :iota)))
-;; (cycle-to-set d4-cayley :tau)
-
-;; (clojure.set/union (cycle-to-set d4-cayley :theta) (cycle-to-set d4-cayley :tau))
-;; (for [x #{:tau :sigma}
-;;       y #{:iota :phi}]
-;;   (star d4-cayley x y))
-;; (operate-many d4-cayley (operate-many d4-cayley #{:tau :phi}))
-;; (cycle-to-set d4-cayley #{:lambda :mu})
+(deftest test-cycle-to-set
+  (testing "cycle-to-set on Z_4"
+    (is (= (cycle-to-set (int-group. 4) #{0}) #{0}))
+    (is (= (cycle-to-set (int-group. 4) #{1}) #{0 1 2 3}))
+    (is (= (cycle-to-set (int-group. 4) #{2}) #{0 2}))
+    (is (= (cycle-to-set (int-group. 4) #{3}) #{3 2 1 0}))
+    (is (= (cycle-to-set (int-group. 4) #{0 1}) #{0 1 2 3}))))
