@@ -169,3 +169,37 @@
   (testing "subgroups on int groups"
     (is (= (generate-subgroups-naive (int-group. 4)) #{#{0} #{0 2} #{0 1 2 3}}))
     (is (= (generate-subgroups-naive (int-group. 3)) #{#{0} #{0 1 2}}))))
+
+(defn right-coset "Returns the right coset of the subgroup set containing elem"
+  [group subgroup-set elem]
+  (set (map #(operate group %1 elem) subgroup-set)))
+
+(defn right-cosets "Returns the right cosets of the subgroup set in group"
+  [group subgroup-set]
+  (set (map
+        #(right-coset group subgroup-set %1)
+        (elems group))))
+
+(defn left-coset "Returns the left coset of the subgroup set containing elem"
+  [group subgroup-set elem]
+  (set (map #(operate group elem %1) subgroup-set)))
+
+(defn left-cosets "Returns the left cosets of the subgroup set in group"
+  [group subgroup-set]
+  (set (map
+        #(left-coset group subgroup-set %1)
+        (elems group))))
+
+(deftest test-cosets
+  (testing "right coset in d4"
+    (is (= (right-coset (d4.) (cycle-to-set (d4.) #{:psi}) :psi)
+           #{:iota :psi}))
+    (is (= (right-coset (d4.) (cycle-to-set (d4.) #{:psi}) :phi)
+           #{:phi :theta}))
+    (is (= (right-coset (d4.) (cycle-to-set (d4.) #{:psi}) :sigma)
+           #{:sigma :mu}))
+    (is (= (right-coset (d4.) (cycle-to-set (d4.) #{:psi}) :tau)
+           #{:tau :lambda})))
+  (testing "right cosets"
+    (is (= (right-cosets (d4.) (cycle-to-set (d4.) #{:psi}))
+           #{ #{:iota :psi} #{:phi :theta} #{:sigma :mu} #{:tau :lambda}}))))
