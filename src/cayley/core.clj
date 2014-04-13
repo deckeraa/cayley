@@ -1,5 +1,6 @@
 (ns cayley.core
-  (:use [clojure.test :as test]))
+  (:use [clojure.test :as test]
+        [clojure.math.combinatorics :as combo]))
 
 ;; The protocol for defining a group
 (defprotocol group
@@ -80,6 +81,31 @@
     (testing "identity"
       (is (= (ident (int-group. 168)) 0)))))
 
+(defn- operate-many
+  "Operates all n elements in the group together, to yield n^2 elements"
+  [group elements]
+  (set (for [x elements y elements]
+         (operate group x y))))
+
+;; Operates all elements together repeatedly until no new elements are
+;; found, at which point it is known that the elements are closed over
+;; the operation. Basically finds the fixed-point of operation over a set.
+(defn cycle-to-set "Takes cycle as a set of elements in a group and returns the set of elements in the cycles."
+  [group elements]
+  (let [newly-found (clojure.set/union
+                     elements
+                     (operate-many group elements))]
+    (if (= elements newly-found)
+      elements
+      (cycle-to-set group newly-found))))
+
+(deftest test-cycle-to-set
+  (testing "cycle-to-set on Z_4"
+    (is (= (cycle-to-set (int-group. 4) #{0}) #{0}))
+    (is (= (cycle-to-set (int-group. 4) #{1}) #{0 1 2 3}))
+    (is (= (cycle-to-set (int-group. 4) #{2}) #{0 2}))
+    (is (= (cycle-to-set (int-group. 4) #{3}) #{3 2 1 0}))
+    (is (= (cycle-to-set (int-group. 4) #{0 1}) #{0 1 2 3}))))
 
 (defn conjugate "Conjugate elem1 with elem2: elem2*elem1*elem2^{-1}" [group elem1 elem2]
   (operate group elem2 elem1 (inverse group elem2))
@@ -128,27 +154,18 @@
     (is (= (normal? (cycle-to-set (d4.) d4-elems) (d4.)) true))
     ))
 
-(defn- operate-many
-  "Operates all n elements in the group together, to yield n^2 elements"
-  [group elements]
-  (set (for [x elements y elements]
-         (operate group x y))))
+(defn generate-subgroups-naive
+  "Returns a set of sets of elements that constitute subgroups of the passed group."
+  [group]
+  (->>
+   (combo/subsets (elems group)) ;; generate subsets (come out as seqs)
+   (remove empty?)
+   (map set) ;; make the seqs into sets
+   (map #(cycle-to-set group %1)) ;; expand the cycles into sets
+   (set) ;; convert the whole thing to a set
+   ))
 
-;; Operates all elements together repeatedly until no new elements are
-;; found, at which point it is known that the elements are closed over
-;; the operation. Basically finds the fixed-point of operation over a set.
-(defn cycle-to-set [group elements]
-  (let [newly-found (clojure.set/union
-                     elements
-                     (operate-many group elements))]
-    (if (= elements newly-found)
-      elements
-      (cycle-to-set group newly-found))))
-
-(deftest test-cycle-to-set
-  (testing "cycle-to-set on Z_4"
-    (is (= (cycle-to-set (int-group. 4) #{0}) #{0}))
-    (is (= (cycle-to-set (int-group. 4) #{1}) #{0 1 2 3}))
-    (is (= (cycle-to-set (int-group. 4) #{2}) #{0 2}))
-    (is (= (cycle-to-set (int-group. 4) #{3}) #{3 2 1 0}))
-    (is (= (cycle-to-set (int-group. 4) #{0 1}) #{0 1 2 3}))))
+(deftest test-generate-subgroups-naive
+  (testing "subgroups on int groups"
+    (is (= (generate-subgroups-naive (int-group. 4)) #{#{0} #{0 2} #{0 1 2 3}}))
+    (is (= (generate-subgroups-naive (int-group. 3)) #{#{0} #{0 1 2}}))))
