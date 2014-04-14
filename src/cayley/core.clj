@@ -81,6 +81,29 @@
     (testing "identity"
       (is (= (ident (int-group. 168)) 0)))))
 
+;; integer groups -- addition modulo n
+(defrecord direct-product [group1 group2]
+  group
+  (elems [this]
+    (set (combo/cartesian-product (elems group1) (elems group2))))
+  (operate-internal [this elem1 elem2]
+    (list
+     (operate group1 (first  elem1) (first  elem2))
+     (operate group2 (second elem1) (second elem2))))
+  (inverse [this elem]
+    (list
+     (inverse group1 (first elem))
+     (inverse group2 (second elem))))
+  (ident [this]
+    (list
+     (ident group1)
+     (ident group2))))
+
+(deftest test-direct-product
+  (testing "Z_4 x Z_2"
+    (is (= (elems (direct-product. (int-group. 4) (int-group. 2)))
+           #{'(0 0) '(0 1) '(1 0) '(1 1) '(2 0) '(2 1) '(3 0) '(3 1)}))))
+
 (defn- operate-many
   "Operates all n elements in the group together, to yield n^2 elements"
   [group elements]
@@ -203,3 +226,16 @@
   (testing "right cosets"
     (is (= (right-cosets (d4.) (cycle-to-set (d4.) #{:psi}))
            #{ #{:iota :psi} #{:phi :theta} #{:sigma :mu} #{:tau :lambda}}))))
+
+(defn normal-subgroups [group]
+  (filter #(normal? %1 group) (generate-subgroups-naive group)))
+
+(defn order-table "Outputs a table of orders of elements -- WIP"
+  [group]
+  (let [elements (elems group)
+        cycles (map #(cycle-to-set group #{%1}) (elems group))
+        counts (map count cycles)]
+    (map #(println
+           "|" %1 "|" %2 "|" %3 "|") elements cycles counts)))
+
+;; (order-table (direct-product. (int-group. 4) (int-group. 2)))
