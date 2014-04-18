@@ -238,4 +238,14 @@
     (map #(println
            "|" %1 "|" %2 "|" %3 "|") elements cycles counts)))
 
-;; (order-table (direct-product. (int-group. 4) (int-group. 2)))
+(defn order-table-to-html-hiccup
+  "Outputs an html table (hiccup) of orders of elements"
+  [group]
+  (let [elements (elems group)
+        cycles (map #(cycle-to-set group #{%1}) (elems group))
+        counts (map count cycles)]
+      [:table (map #(vector
+                     :tr
+                     [:td (prn-str %1)]
+                     [:td (prn-str %2)]
+                     [:td (prn-str %3)]) elements cycles counts)]))
