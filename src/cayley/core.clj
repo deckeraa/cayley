@@ -62,7 +62,7 @@
 (defrecord int-group [n]
   group
   (group-name [this] (str "Z_" n))
-  (group-string [this] (str "the group of addition modulo" n "."))
+  (group-string [this] (str "the group of addition modulo " n "."))
   (elems [this]
     (set (range 0 n)))
   (operate-internal [this elem1 elem2]
@@ -90,10 +90,12 @@
 ;; integer groups -- addition modulo n
 (defrecord direct-product [group1 group2]
   group
-  (group-name [this] "TODO direct-product name"
-    ;; (str "( " (group-name group1) " x " (group-name group2 " )"))
-    )
-  (group-string [this] "TODO direct-product description")
+  (group-name [this]
+    (str (group-name group1) " x " (group-name group2)))
+  (group-string [this]
+    (str
+     (group-name group1) ": "(group-string group1) "\n"
+     (group-name group2) ": "(group-string group2)))
   (elems [this]
     (set (combo/cartesian-product (elems group1) (elems group2))))
   (operate-internal [this elem1 elem2]
