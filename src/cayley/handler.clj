@@ -4,9 +4,19 @@
   (:require [compojure.handler :as handler]
             [compojure.route :as route]
             [hiccup.core :as html]
-            [cayley.core :as core])
+            [cayley.core :as core]
+            [garden.core :as css]
+            [garden.units :as u :refer [px pt]])
   (:import [cayley.core int-group]
            [cayley.core direct-product]))
+
+(defn group-info [group]
+  [:div.group-info
+   [:div.group-description
+    (str (core/group-name group) ": " (core/group-string group))]
+   [:div.order-table
+    [:p "Order Table"]
+    (core/order-table-to-html-hiccup group)]])
 
 (defroutes app-routes
   (GET "/" [] (html/html [:html
@@ -18,11 +28,3 @@
 
 (def app
   (handler/site app-routes))
-
-(defn group-info [group]
-  [:div.group-info
-   [:div.group-description
-    (str (core/group-name group) ": " (core/group-string group))]
-   [:div.order-table
-    [:p "Order Table"]
-    (core/order-table-to-html-hiccup group)]])

@@ -6,9 +6,20 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/math.combinatorics "0.0.7"]
                  [compojure "1.1.6"]
-                 [hiccup "1.0.5"]]
-  :plugins [[lein-ring "0.8.10"]]
+                 [hiccup "1.0.5"]
+                 [garden "1.1.5"]]
+  :plugins [[lein-ring "0.8.10"]
+            [lein-garden "0.1.8"]]
   :ring {:handler cayley.handler/app}
+  :garden {:builds [{;; Optional name of the build:
+                     :id "screen"
+                     ;; The var containing your stylesheet:
+                     :stylesheet cash-money.core/screen
+                     ;; Compiler flags passed to `garden.core/css`:
+                     :compiler {;; Where to save the file:
+                                :output-to "resources/group.css"
+                                ;; Compress the output?
+                                :pretty-print? false}}]}
   :profiles
   {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
                         [ring-mock "0.1.5"]]}})
