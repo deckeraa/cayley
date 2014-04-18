@@ -5,6 +5,8 @@
 ;; The protocol for defining a group
 (defprotocol group
   "Protocol for defining elements and how the elements operate in a group"
+  (group-name [this] "Returns a string with the name of the group")
+  (group-string [this] "Returns a string describing the group.")
   (elems [this] "Returns a set of the elements of the group")
   (operate-internal [this elem1 elem2] "Operates elem1 with elem2")
   (inverse [this elem] "Returns the inverse of elem")
@@ -42,6 +44,8 @@
 
 (defrecord d4 []
   group
+  (group-name [this] "D_4")
+  (group-string [this] "the symmetries of a square")
   (elems [this] #{:iota :phi :psi :theta :sigma :tau :lambda :mu})
   (operate-internal [this elem1 elem2] (operate-via-cayley-table d4-cayley elem1 elem2))
   (inverse [this elem] (invert-via-cayley-table d4-cayley elem))
@@ -57,6 +61,8 @@
 ;; integer groups -- addition modulo n
 (defrecord int-group [n]
   group
+  (group-name [this] (str "Z_" n))
+  (group-string [this] (str "the group of addition modulo" n "."))
   (elems [this]
     (set (range 0 n)))
   (operate-internal [this elem1 elem2]
@@ -84,6 +90,10 @@
 ;; integer groups -- addition modulo n
 (defrecord direct-product [group1 group2]
   group
+  (group-name [this] "TODO direct-product name"
+    ;; (str "( " (group-name group1) " x " (group-name group2 " )"))
+    )
+  (group-string [this] "TODO direct-product description")
   (elems [this]
     (set (combo/cartesian-product (elems group1) (elems group2))))
   (operate-internal [this elem1 elem2]
