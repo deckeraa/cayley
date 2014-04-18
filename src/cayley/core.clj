@@ -256,8 +256,10 @@
   (let [elements (elems group)
         cycles (map #(cycle-to-set group #{%1}) (elems group))
         counts (map count cycles)]
-      [:table (map #(vector
-                     :tr
-                     [:td (prn-str %1)]
-                     [:td (prn-str %2)]
-                     [:td (prn-str %3)]) elements cycles counts)]))
+    [:table
+     [:tr [:td "Element"] [:td "Cycle"] [:td "Order"]]
+     (map #(vector
+            :tr
+            [:td (prn-str %1)]
+            [:td (prn-str %2)]
+            [:td (prn-str %3)]) elements cycles counts)]))
