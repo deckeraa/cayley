@@ -12,6 +12,17 @@
   (inverse [this elem] "Returns the inverse of elem")
   (ident [this] "Returns the identity element"))
 
+
+;; To my knowledge inheritance via protocols is not supported,
+;; so the ring protocol only contains functions for rings not
+;; already in group.
+;; Mathematically, a ring *must* be a group, but programatically
+;; Clojure does no checking, so make sure that defrecord specifies
+;; both group and ring when declaring a ring.
+(defprotocol ring
+  "Protocol for a ring"
+  (multiply [this elem1 elem2] "Multiplies elem1 with elem2"))
+
 ;; Internal functions for use with Cayley tables
 (defn- operate-via-cayley-table [table elem1 elem2]
   (get (get table elem1) elem2))
@@ -60,7 +71,7 @@
 
 ;; integer groups -- addition modulo n
 (defrecord int-group [n]
-  group
+  group ring
   (group-name [this] (str "Z_" n))
   (group-string [this] (str "the group of addition modulo " n "."))
   (elems [this]
@@ -71,7 +82,9 @@
     (if (= 0 elem)
       0
       (- n elem)))
-  (ident [this] 0))
+  (ident [this] 0)
+  (multiply [this elem1 elem2]
+    (mod (* elem1 elem2) n)))
 
 (deftest test-int-group
   (testing "int-group -- addition modulo n"
@@ -85,7 +98,10 @@
       (is (= (inverse (int-group. 4) 3) 1))
       (is (= (inverse (int-group. 2349532) 0) 0)))
     (testing "identity"
-      (is (= (ident (int-group. 168)) 0)))))
+      (is (= (ident (int-group. 168)) 0)))
+    (testing "multiplication"
+      (is (= (multiply (int-group. 10) 5 2) 0))
+      (is (= (multiply (int-group.  4) 2 3) 2)))))
 
 ;; integer groups -- addition modulo n
 (defrecord direct-product [group1 group2]
@@ -263,3 +279,23 @@
             [:td (prn-str %1)]
             [:td (prn-str %2)]
             [:td (prn-str %3)]) elements cycles counts)]))
+
+(defn zero-divisors "Returns the set of zero divisors in the ring."
+  [ring]
+  (let [all-pairs-booled
+        (map (fn [[x y]]
+               (vector [x y] (= 0 (multiply ring x y))))
+             (combo/cartesian-product (elems ring) (elems ring)))]
+    (set (map #(first (first %1))
+              (filter (fn [[[x y] bool]]
+                        (and
+                         bool
+                         (not (= 0 x))
+                         (not (= 0 y))))
+                      all-pairs-booled)))))
+
+(deftest test-zero-divisors
+  (testing "zero divisors in Z_n"
+    (is (= (zero-divisors (int-group. 10)) #{2 4 5 6 8}))
+    (is (= (zero-divisors (int-group.  4)) #{2}))
+    (is (= (zero-divisors (int-group.  5)) #{}))))
