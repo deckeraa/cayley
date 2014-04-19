@@ -105,7 +105,7 @@
 
 ;; integer groups -- addition modulo n
 (defrecord direct-product [group1 group2]
-  group
+  group; ring
   (group-name [this]
     (str (group-name group1) " x " (group-name group2)))
   (group-string [this]
@@ -125,7 +125,11 @@
   (ident [this]
     (list
      (ident group1)
-     (ident group2))))
+     (ident group2)))
+  ;; (multiply [this elem1 elem2]
+  ;;   (list (multiply group1 (first elem1)  (first elem2))
+  ;;         (multiply group2 (second elem1) (second elem2))))
+  )
 
 (deftest test-direct-product
   (testing "Z_4 x Z_2"
@@ -299,3 +303,5 @@
     (is (= (zero-divisors (int-group. 10)) #{2 4 5 6 8}))
     (is (= (zero-divisors (int-group.  4)) #{2}))
     (is (= (zero-divisors (int-group.  5)) #{}))))
+
+;; (zero-divisors (direct-product. (int-group. 10) (int-group. 10)))
