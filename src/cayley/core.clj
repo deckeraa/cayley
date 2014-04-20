@@ -262,28 +262,6 @@
 (defn normal-subgroups [group]
   (filter #(normal? %1 group) (generate-subgroups-naive group)))
 
-(defn order-table "Outputs a table of orders of elements -- WIP"
-  [group]
-  (let [elements (elems group)
-        cycles (map #(cycle-to-set group #{%1}) (elems group))
-        counts (map count cycles)]
-    (map #(println
-           "|" %1 "|" %2 "|" %3 "|") elements cycles counts)))
-
-(defn order-table-to-html-hiccup
-  "Outputs an html table (hiccup) of orders of elements"
-  [group]
-  (let [elements (elems group)
-        cycles (map #(cycle-to-set group #{%1}) (elems group))
-        counts (map count cycles)]
-    [:table
-     [:tr [:td "Element"] [:td "Cycle"] [:td "Order"]]
-     (map #(vector
-            :tr
-            [:td (prn-str %1)]
-            [:td (prn-str %2)]
-            [:td (prn-str %3)]) elements cycles counts)]))
-
 (defn zero-divisors "Returns the set of zero divisors in the ring."
   [ring]
   (let [all-pairs-booled

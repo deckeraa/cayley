@@ -25,12 +25,18 @@
 
 (defn print-shim "A collection of tweaks and hacks to output things nicely."
   [obj]
-  nil)
+  (cond
+   (set? obj) (clojure.string/join (rest (pr-str obj)))
+   :else (pr-str obj)))
+
+(deftest test-print-shim
+  (is (= (print-shim #{1 2 3}) "{1 2 3}"))
+  (is (= (print-shim 4) "4")))
 
 (defn table-to-org-table "Takes a 2-deep vector and turns it into an org-table"
   [table]
-  (let [prt-tbl (map #(map pr-str %1) (rest t)) ; handle caption
-             full-tbl (cons (first t) prt-tbl)]
+  (let [prt-tbl (map #(map print-shim %1) (rest table)) ; handle caption
+             full-tbl (cons (first table) prt-tbl)]
          (clojure.string/join "\n"
                               (map
                                #(clojure.string/join (interpose "|" %1))
@@ -39,25 +45,14 @@
 (deftest test-table-to-org-table
   (testing "order table of Z_4"
     (is (= (table-to-org-table (order-table (int-group. 4)))
-           "Element|Cycle|Order\n0|#{0}|1\n1|#{0 1 2 3}|4\n2|#{0 2}|2\n3|#{0 1 2 3}|4"))))
+           "Element|Cycle|Order\n0|{0}|1\n1|{0 1 2 3}|4\n2|{0 2}|2\n3|{0 1 2 3}|4"))))
 
-(->> t
-     (map pr-str))
-
-(print (let [prt-tbl (map #(map pr-str %1) (rest t)) ; handle caption
-             full-tbl (cons (first t) prt-tbl)]
-         (clojure.string/join "\n"
-                              (map
-                               #(clojure.string/join (interpose "|" %1))
-                               full-tbl))))
-
-(print (clojure.string/join "\n" '("a" "b" "c")))
-
-(def t [["Element" "Cycle" "Order"]
-            [0 	#{0} 	   1]
-            [1 	#{0 1 2 3} 4]
-            [2 	#{0 2} 	   2]
-            [3 	#{0 1 2 3} 4]])
+;; (print (let [prt-tbl (map #(map pr-str %1) (rest t)) ; handle caption
+;;              full-tbl (cons (first t) prt-tbl)]
+;;          (clojure.string/join "\n"
+;;                               (map
+;;                                #(clojure.string/join (interpose "|" %1))
+;;                                full-tbl))))
 
 (defn order-table-to-html-hiccup
   "Outputs an html table (hiccup) of orders of elements"
@@ -69,9 +64,9 @@
      [:tr [:td "Element"] [:td "Cycle"] [:td "Order"]]
      (map #(vector
             :tr
-            [:td (prn-str %1)]
-            [:td (prn-str %2)]
-            [:td (prn-str %3)]) elements cycles counts)]))
+            [:td (print-shim %1)]
+            [:td (print-shim %2)]
+            [:td (print-shim %3)]) elements cycles counts)]))
 
 (defn group-info [group]
   [:div.group-info
@@ -79,4 +74,4 @@
     (str (core/group-name group) ": " (core/group-string group))]
    [:div.order-table
     [:p "Order Table"]
-    (core/order-table-to-html-hiccup group)]])
+    (order-table-to-html-hiccup group)]])
