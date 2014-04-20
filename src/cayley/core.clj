@@ -1,5 +1,6 @@
 (ns cayley.core
-  (:use [clojure.test :as test]
+  (:use ;; [clojure.string :as string]
+        [clojure.test :as test]
         [clojure.math.combinatorics :as combo]))
 
 ;; The protocol for defining a group
@@ -104,43 +105,33 @@
       (is (= (multiply (int-group.  4) 2 3) 2)))))
 
 ;; integer groups -- addition modulo n
-(defrecord direct-product [group1 group2]
+(defrecord direct-product [groups]
   group; ring
   (group-name [this]
-    (str (group-name group1) " x " (group-name group2)))
+    (clojure.string/join (interpose " x " (map group-name groups))))
   (group-string [this]
-    (str
-     (group-name group1) ": "(group-string group1) "\n"
-     (group-name group2) ": "(group-string group2)))
+    (clojure.string/join
+     "\n"
+     (reverse
+      (map #(clojure.string/join [(group-name %) ": " (group-string %)])
+           (set groups)))))
   (elems [this]
-    (set (combo/cartesian-product (elems group1) (elems group2))))
+    (set (eval (cons combo/cartesian-product (map elems groups)))))
   (operate-internal [this elem1 elem2]
-    (list
-     (operate group1 (first  elem1) (first  elem2))
-     (operate group2 (second elem1) (second elem2))))
+    (map #(operate %1 %2 %3) groups elem1 elem2))
   (inverse [this elem]
-    (list
-     (inverse group1 (first elem))
-     (inverse group2 (second elem))))
+    (map #(inverse %1 %2) groups elem))
   (ident [this]
-    (list
-     (ident group1)
-     (ident group2)))
-  ;; (multiply [this elem1 elem2]
-  ;;   (list (multiply group1 (first elem1)  (first elem2))
-  ;;         (multiply group2 (second elem1) (second elem2))))
+    (map ident groups))
   )
 
-(deftest test-direct-product
-  (testing "Z_4 x Z_2"
-    (is (= (elems (direct-product. (int-group. 4) (int-group. 2)))
-           #{'(0 0) '(0 1) '(1 0) '(1 1) '(2 0) '(2 1) '(3 0) '(3 1)}))))
+;; Tests for direct-product are below.
+;; It is more convenient to have the parser for
+;; writing the tests.
+;; Yeah, yeah, order in the text file shouldn't order,
+;; but I want to avoid any spurious errors from cider.
 
-;; We're going full TDD here: if there is a test case,
-;; then that behavior is defined, otherwise it is not.
-;; I need the ability to parse immediately to do my homework,
-;; so I'll come back and make a rigorous parser later #Agile.
-(defn parse "Parses a string into a group instantiation"
+(defn- parse-aux "Parses a single group"
   [input]
   (let [seperated (clojure.string/split input #"_")
         group-letter (first seperated)
@@ -149,6 +140,37 @@
      (= group-letter "Z") (int-group. subscript)
      (and (= group-letter "D") (= subscript 4)) (d4.)
      :else nil)))
+
+;; (defn- gen-direct-product "Generates direct product from groups"
+;;   [groups]
+;;   (reduce #()))
+
+;; (reduce #(direct-product. %1 %2) '((int-group. 1) (int-group. 2) (int-group. 3)))
+
+;; We're going full TDD here: if there is a test case,
+;; then that behavior is defined, otherwise it is not.
+;; I need the ability to parse immediately to do my homework,
+;; so I'll come back and make a rigorous parser later #Agile.
+(defn parse "Parses a string into a group instantiation"
+  [input]
+  (let [groups (map parse-aux (map clojure.string/trim (clojure.string/split input #"[xX]")))]
+    (if (= 1 (count groups))
+      (first groups)
+      (direct-product. groups))
+    ))
+
+
+(deftest test-direct-product
+  (testing "Z_4 x Z_2"
+    (is (= (elems (parse "Z_4 x Z_2"))
+           #{'(0 0) '(0 1) '(1 0) '(1 1) '(2 0) '(2 1) '(3 0) '(3 1)}))
+    (is (= (ident (parse "Z_1 x Z_2 x Z_3 x Z_4")) '(0 0 0 0)))
+    (is (= (operate (parse "Z_2 x Z_2") '(1 0) '(0 1)) '(1 1)))
+    (is (= (group-name (parse "Z_4 X  Z_2  x   Z_168"))
+           "Z_4 x Z_2 x Z_168"))
+    (is (= (group-string (parse "Z_2 x Z_2 x Z_4"))
+           (clojure.string/join ["Z_2: " (group-string (parse "Z_2")) "\n"
+                                  "Z_4: " (group-string (parse "Z_4"))]) ))))
 
 (deftest test-parse
   (testing "int groups"

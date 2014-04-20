@@ -15,15 +15,9 @@
 (defroutes app-routes
   (GET "/" [] (html/html [:html
                           [:link {:rel "stylesheet" :type "text/css" :href "/css/group.css"}]
-                          (views/group-info (core/int-group. 4))
-                          (views/group-info (core/direct-product.
-                                       (core/int-group. 2)
-                                       (core/int-group. 4)))
-                          (views/group-info (core/direct-product.
-                                       (core/direct-product.
-                                        (core/int-group. 2)
-                                        (core/int-group. 2))
-                                       (core/int-group. 2)))
+                          (views/group-info (core/parse "Z_4"))
+                          (views/group-info (core/parse "Z_2 x Z_4"))
+                          (views/group-info (core/parse "Z_2 x Z_2 x Z_2"))
                           (views/group-info (core/d4. ))
                           ]))
   (route/resources "/" {:root "."} )
