@@ -136,6 +136,31 @@
     (is (= (elems (direct-product. (int-group. 4) (int-group. 2)))
            #{'(0 0) '(0 1) '(1 0) '(1 1) '(2 0) '(2 1) '(3 0) '(3 1)}))))
 
+;; We're going full TDD here: if there is a test case,
+;; then that behavior is defined, otherwise it is not.
+;; I need the ability to parse immediately to do my homework,
+;; so I'll come back and make a rigorous parser later #Agile.
+(defn parse "Parses a string into a group instantiation"
+  [input]
+  (let [seperated (clojure.string/split input #"_")
+        group-letter (first seperated)
+        subscript (Integer. (second seperated))]
+    (cond
+     (= group-letter "Z") (int-group. subscript)
+     (and (= group-letter "D") (= subscript 4)) (d4.)
+     :else nil)))
+
+(deftest test-parse
+  (testing "int groups"
+    (is (= (parse "Z_4") (int-group. 4)))
+    (is (= (parse "Z_1") (int-group. 1)))
+    (is (= (parse "Z_168") (int-group. 168))))
+  (testing "symmetries of shapes"
+    (is (= (parse "D_4") (d4.)))
+    (is (= (parse "D_3") nil))
+    (is (= (parse "D_2") nil))
+    (is (= (parse "D_1") nil))))
+
 (defn- operate-many
   "Operates all n elements in the group together, to yield n^2 elements"
   [group elements]
