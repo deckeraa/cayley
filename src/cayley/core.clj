@@ -42,6 +42,14 @@
     ([group elem1 elem2 & more-elems]
        (apply this group (this group elem1 elem2) more-elems))))
 
+;; (defn valid-cayley-table? "Verifies that the Cayley table satisfies the Latin Square Property"
+;;   [table]
+;;   )
+;; (let [horizontals (keys (vals d4-cayley))
+;;       verticals (map set (map vals (vals d4-cayley)))
+;;       bad-vertical-index (count (drop-while true? (map #(= (first verticals) %1) verticals)))]
+;;   bad-vertical)
+
 ;; d4 -- symmetries of a square, using my abstract algebra professor's custom notation
 (def d4-elems #{:iota :phi :psi :theta :sigma :tau :lambda :mu} )
 (def d4-cayley

@@ -26,11 +26,12 @@
 (defn print-shim "A collection of tweaks and hacks to output things nicely."
   [obj]
   (cond
-   (set? obj) (clojure.string/join (rest (pr-str obj)))
+   (set? obj) (clojure.string/join (interpose ", " (clojure.string/split (clojure.string/join (rest (pr-str obj))) #" ")))
    :else (pr-str obj)))
 
 (deftest test-print-shim
-  (is (= (print-shim #{1 2 3}) "{1 2 3}"))
+  (is (= (print-shim #{1 2 3}) "{1, 2, 3}"))
+  (is (= (print-shim #{#{1 2} #{3 4}}) "{{1, 2}, {3, 4}}"))
   (is (= (print-shim 4) "4")))
 
 (defn table-to-org-table "Takes a 2-deep vector and turns it into an org-table"
@@ -39,13 +40,13 @@
              full-tbl (cons (first table) prt-tbl)]
          (clojure.string/join "\n"
                               (map
-                               #(clojure.string/join (interpose "|" %1))
+                               #(str "|" ( clojure.string/join (interpose "|" %1)) "|")
                                full-tbl))))
 
 (deftest test-table-to-org-table
   (testing "order table of Z_4"
     (is (= (table-to-org-table (order-table (int-group. 4)))
-           "Element|Cycle|Order\n0|{0}|1\n1|{0 1 2 3}|4\n2|{0 2}|2\n3|{0 1 2 3}|4"))))
+           "|Element|Cycle|Order|\n|0|{0}|1|\n|1|{0, 1, 2, 3}|4|\n|2|{0, 2}|2|\n|3|{0, 1, 2, 3}|4|"))))
 
 ;; (print (let [prt-tbl (map #(map pr-str %1) (rest t)) ; handle caption
 ;;              full-tbl (cons (first t) prt-tbl)]
@@ -53,6 +54,10 @@
 ;;                               (map
 ;;                                #(clojure.string/join (interpose "|" %1))
 ;;                                full-tbl))))
+
+(defn print-order-table "Convenience function for printing the order table of a group"
+  [group]
+  (print (table-to-org-table (order-table group))))
 
 (defn order-table-to-html-hiccup
   "Outputs an html table (hiccup) of orders of elements"
