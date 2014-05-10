@@ -14,12 +14,12 @@
   :garden {:builds [{;; Optional name of the build:
                      :id "screen"
                      ;; The var containing your stylesheet:
-                     :stylesheet cash-money.core/screen
+                     :stylesheet cayley.css/screen
                      ;; Compiler flags passed to `garden.core/css`:
                      :compiler {;; Where to save the file:
-                                :output-to "resources/group.css"
+                                :output-to "resources/css/group.css"
                                 ;; Compress the output?
-                                :pretty-print? false}}]}
+                                :pretty-print? true}}]}
   :profiles
   {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
                         [ring-mock "0.1.5"]]}})
