@@ -86,7 +86,12 @@
 ;; (re-seq  #"[\(\)]*\+" "()+3")
 
 
-
+;; This grammer is incomplete
+;; TODO:
+;;  1) handle arbitrary variable names
+;;  2) handle arbitrary function names
+;;  3) This might require generating a new parser at run time, based
+;;     on the variables and functions the user is using.
 (def infix-naive
   (insta/parser
    "S = E
@@ -95,5 +100,9 @@
       | 'x'"
    ))
 
-(infix-naive "x+x")
+(infix-naive "x+x-x")
 
+;; TODO figure out how to transfrom parser output into s-exp
+(walk/postwalk
+ (fn [e] (if (= [:E "x"] e) 'x e))
+ (infix-naive "x+x"))
