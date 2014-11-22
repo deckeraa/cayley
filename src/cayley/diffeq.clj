@@ -1,5 +1,5 @@
 (ns cayley.diffeq
-  (:use ;; [clojure.string :as string]
+  (:use [clojure.string :as str]
         [clojure.test :as test]
         [clojure.math.numeric-tower :as math]
         [clojure.walk :as walk]))
@@ -29,7 +29,6 @@
   (let [our-fn   (first expr)
         our-var  (second expr)
         our-expt (nth expr 2)]
-    (println (type our-expt) )
     (if (= our-expt 0)
       1
       (list '* our-expt (list 'math/expt our-var (- our-expt 1))))))
@@ -38,21 +37,40 @@
 (power-rule-naive '(math/expt x 3))
 
 
-(let [x 3]
-   (power-rule-naive '(* x 3)))
+;; (let [x 3]
+;;    (power-rule-naive '(* x 3)))
 
-(eval (let [x 3] (list '* 'x 2)))
-(let [x 3] '(* x 2))
-(let [x 3]
-  (= (list '* 'x 2)
-     (list '*  x 2)))
+;; (eval (let [x 3] (list '* 'x 2)))
+;; (let [x 3] '(* x 2))
+;; (let [x 3]
+;;   (= (list '* 'x 2)
+;;      (list '*  x 2)))
 
-(let [x 3] '(* x 2))
+;; (let [x 3] '(* x 2))
 
-(walk/postwalk 
- (fn [e] (if (string? e) (keyword e) e)) 
- {"hello" ["world" {:foo '(bar "baz")}]})
+;; (walk/postwalk 
+;;  (fn [e] (if (string? e) (keyword e) e)) 
+;;  {"hello" ["world" {:foo '(bar "baz")}]})
 
 
 
-(eval (d-subs 'x 2 '(* x 3)))
+;; (eval (d-subs 'x 2 '(* x 3)))
+
+;;; work on reading infix notation -- wip
+(def expr-str "2+5")
+(defn read-infix 
+  "Translates an infix mathematical expression in a string into an s-expression that can be eval'd"
+  [expr-str]
+  (let [terms (split expr-str #"\+" 0)]
+    (if (= 1 (count terms)) ;; individual term
+      (read-string (first terms))
+      (cons '+ (map read-infix terms))
+      )))
+
+(deftest test-read-infix
+  (testing "simple-addition"
+    (is (= (read-infix "2+3+5") '(+ 2 3 5)))
+   ))
+
+(read-infix "2+3+5")
+
