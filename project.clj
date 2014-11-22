@@ -8,7 +8,8 @@
                  [org.clojure/math.numeric-tower "0.0.4"]
                  [compojure "1.1.6"]
                  [hiccup "1.0.5"]
-                 [garden "1.1.5"]]
+                 [garden "1.1.5"]
+                 [instaparse "1.3.4"]]
   :plugins [[lein-ring "0.8.10"]
             [lein-garden "0.1.8"]]
   :ring {:handler cayley.handler/app}

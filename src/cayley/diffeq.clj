@@ -2,10 +2,11 @@
   (:use [clojure.string :as str]
         [clojure.test :as test]
         [clojure.math.numeric-tower :as math]
-        [clojure.walk :as walk]))
+        [clojure.walk :as walk]
+        [instaparse.core :as insta]))
 
 ;;; This files contains some ideas for a symbolic calculus system that I
-;;; want to write as I do through "Differential Equations with Modeling Applications 9th edition" (Dennis Zill).
+;;; want to write as I go through "Differential Equations with Modeling Applications 9th edition" (Dennis Zill).
 ;;; The below code isn't intended to be well-designed or even to necessarily
 ;;; work.
 
@@ -70,7 +71,29 @@
 (deftest test-read-infix
   (testing "simple-addition"
     (is (= (read-infix "2+3+5") '(+ 2 3 5)))
+   )
+  (testing "parenthesis"
+    (is (= (eval (read-infix "2+(3-5)")) 0))
+    ))
+
+;; (eval (read-infix "2+3+5"))
+
+;; (str/split "1+(2+3)" #"[\([^\)]*\)]*\+" )
+;; (re-seq #"\+" "1+(2+3)")
+;; (str/split "()1+2" #"[\(\)]*(\+)")
+;; (str/split "(1+2)+3" #"[\([^\)]*\)]*\+")
+;; (re-seq  #"[\([^\)]*\)]*\+" "(1+2)+3")
+;; (re-seq  #"[\(\)]*\+" "()+3")
+
+
+
+(def infix-naive
+  (insta/parser
+   "S = E
+    E = E '+' E 
+      | E '-' E
+      | 'x'"
    ))
 
-(read-infix "2+3+5")
+(infix-naive "x+x")
 
