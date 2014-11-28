@@ -97,10 +97,11 @@
    "S = E
     E = E '+' E 
       | E '-' E
-      | 'x'"
+      | variable
+    variable = #'[A-Za-z]'"
    ))
 
-(infix-naive "x+x-x")
+(infix-naive "x+x-y")
 
 ;; TODO figure out how to transfrom parser output into s-exp
 (def expr (infix-naive "x+x"))
@@ -124,4 +125,5 @@
   (testing "insta_to_sexpr"
     (is (= (insta_to_sexpr (infix-naive "x+x")) '(+ x x)))
     (is (= (eval (d-subs 'x 2 (insta_to_sexpr (infix-naive "x+x+x")))) 6))
+    (is (= (eval (d-subs 'y 3 (insta_to_sexpr (infix-naive "y+y+y")))) 9))
    ))
