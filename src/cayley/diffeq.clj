@@ -10,19 +10,28 @@
 ;;; The below code isn't intended to be well-designed or even to necessarily
 ;;; work.
 
-(defn d-subs [sym val expr]
+(defn d-subs 
+ ([sym val expr]
   "Substitutes a value for a symbol in an expr
    example: (d-subs 'x 2 '(+ x 3)) -> '(+ 2 3)
    example: (d-subs '(+ x 3) 'u '(* u (+ x 3))) -> '(* u u)))"
   (walk/postwalk
    (fn [e] (if (= sym e) val e))
    expr))
+ ([sym-val-pair-list expr]
+    (let [var-hash (apply hash-map sym-val-pair-list)]
+      (walk/postwalk
+       (fn [e] (if (var-hash e) (var-hash e) e))
+       expr))))
 
 (deftest test-d-subs
-  (testing "d-subs"
+  (testing "d-subs single variable"
     (is (= (d-subs 'x 2 '(+ x 3)) '(+ 2 3)))
     (is (= (d-subs '(+ x 3) 'u '(* u (+ x 3))) '(* u u)))
-   ))
+   )
+  (testing "d-subs multi-variable"
+    (is (= (d-subs ['x 1 'y 2] '(+ x y)) '(+ 1 2))))
+  )
 
 (defn power-rule-naive
   "(math/expt x 3) -> (* 3 (math/expt x 2)"
@@ -97,11 +106,13 @@
    "S = E
     E = E '+' E 
       | E '-' E
+      | E infix-operation E
       | variable
-    variable = #'[A-Za-z]'"
+    <variable> = #'[A-Za-z]'
+    <infix-operation> = '+' | '-' | '*' | '/' "
    ))
 
-(infix-naive "x+x-y")
+(infix-naive "x+x*y")
 
 ;; TODO figure out how to transfrom parser output into s-exp
 (def expr (infix-naive "x+x"))
@@ -126,4 +137,5 @@
     (is (= (insta_to_sexpr (infix-naive "x+x")) '(+ x x)))
     (is (= (eval (d-subs 'x 2 (insta_to_sexpr (infix-naive "x+x+x")))) 6))
     (is (= (eval (d-subs 'y 3 (insta_to_sexpr (infix-naive "y+y+y")))) 9))
+    (is (= (eval (d-subs ['x 1 'y 2 'z 3] (insta_to_sexpr (infix-naive "x+y*z")))) 7))
    ))
