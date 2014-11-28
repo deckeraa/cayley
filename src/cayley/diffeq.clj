@@ -103,6 +103,24 @@
 (infix-naive "x+x-x")
 
 ;; TODO figure out how to transfrom parser output into s-exp
-(walk/postwalk
- (fn [e] (if (= [:E "x"] e) 'x e))
- (infix-naive "x+x"))
+(def expr (infix-naive "x+x"))
+(defn insta_to_sexpr [expr]
+  (->> 
+   expr
+   (walk/postwalk ;; get rid of the terminal markers
+    (fn [e] (if (and 
+                 (vector? e)
+                 (= 2 (count e))
+                 (= :E (e 0))) (e 1) e)))
+   (walk/postwalk ;; transform the infix [:E "x" "+" "x"]-type things to (+ x x)
+    (fn [e] 
+      (if (and (vector? e) (= :E (first e))) (map symbol (list (e 2) (e 1) (e 3))) e))
+    )
+   (walk/postwalk ;; take care of the "S" block -- should be something like [:S (+ x x)]
+    (fn [e]
+      (if (and (vector? e) (= :S (e 0))) (e 1) e)))))
+
+(eval (d-subs 'x 1
+              (insta_to_sexpr (infix-naive "x+x")))) ;; 1+1=2, the hard way
+
+
