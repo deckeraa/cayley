@@ -114,13 +114,14 @@
                  (= :E (e 0))) (e 1) e)))
    (walk/postwalk ;; transform the infix [:E "x" "+" "x"]-type things to (+ x x)
     (fn [e] 
-      (if (and (vector? e) (= :E (first e))) (map symbol (list (e 2) (e 1) (e 3))) e))
+      (if (and (vector? e) (= :E (first e))) (map #(if (string? %1) (symbol %1) %1) (list (e 2) (e 1) (e 3))) e))
     )
    (walk/postwalk ;; take care of the "S" block -- should be something like [:S (+ x x)]
     (fn [e]
       (if (and (vector? e) (= :S (e 0))) (e 1) e)))))
 
-(eval (d-subs 'x 1
-              (insta_to_sexpr (infix-naive "x+x")))) ;; 1+1=2, the hard way
-
-
+(deftest test-insta_to_sexpr
+  (testing "insta_to_sexpr"
+    (is (= (insta_to_sexpr (infix-naive "x+x")) '(+ x x)))
+    (is (= (eval (d-subs 'x 2 (insta_to_sexpr (infix-naive "x+x+x")))) 6))
+   ))
